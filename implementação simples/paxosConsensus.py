@@ -1,6 +1,6 @@
-import collections
-from abc import ABC, abstractmethod
+#esta implementação nao está conseguindo eleger um node
 
+from abc import ABC, abstractmethod
 
 class PaxosValue:
     def __init__(self, value):
@@ -8,6 +8,7 @@ class PaxosValue:
 
     def getValue(self):
         return self.value
+    
     
 
 class PaxosProtocol(ABC):
@@ -55,12 +56,22 @@ class PaxosNode(PaxosProtocol):
             print(f"Node {self.node_id} proposing value: {value}")
 
 
+    '''def run_leader_election(self):
+        proposal_id = self.generate_proposal_id()
+        self.proposed_leader = self.node_id
+
+        self.prepare(proposal_id)'''
+
+
     def run_leader_election(self):
         proposal_id = self.generate_proposal_id()
         self.proposed_leader = self.node_id
 
-        self.prepare(proposal_id)
-
+        # Simulação: O nó com ID 2 aceita o líder proposto pelo nó com ID 1
+        if self.node_id == 2:
+            for node in self.nodes:
+                if node.node_id == 1:
+                    node.accept(proposal_id, self.proposed_leader)
 
 
     def prepare(self, proposal_id):
@@ -84,7 +95,7 @@ class PaxosNode(PaxosProtocol):
             pass
 
 
-    def accept(self, proposal_id, value):
+    '''def accept(self, proposal_id, value):
         # Verifica se obteve promessas suficientes na fase de preparação
         if self.promise_count > len(self.neighbors) / 2:
             # Se a proposta atual for a mais recente aceita
@@ -99,11 +110,15 @@ class PaxosNode(PaxosProtocol):
                 # Se a proposta não for a mais recente aceita, pode não estar atualizado
                 # ou pode ser um nó desatualizado, portanto, deve começar o processo novamente
                 #self.run_paxos(self.proposed_value.value)  # Reinicia o processo de Paxos com a proposta atual
-                self.run_leader_election(self.proposed_leader)
+                self.run_leader_election()
         else:
             # Se não obteve promessas suficientes, pode tentar novamente
             #self.run_paxos(self.proposed_value.getValue())  # Reinicia o processo de Paxos com a proposta atual
-            self.run_leader_election(self.proposed_leader)
+            self.run_leader_election()'''
+
+    def accept(self, proposal_id, value):
+        if proposal_id == self.last_accepted_proposal:
+            self.accepted_leader = value
 
 
     def learn(self, accepted_value):
@@ -146,5 +161,14 @@ if __name__ == "__main__":
     nodes[0].run_leader_election()
 
     # Verificando o líder eleito
-    leader = max(nodes, key=lambda node: node.accepted_leader)
-    print(f"Líder eleito: Node {leader.node_id} com ID {leader.accepted_leader}")
+    valid_nodes = [node for node in nodes if node.accepted_leader is not None]
+
+    if valid_nodes:
+        leader = max(valid_nodes, key=lambda node: node.accepted_leader)
+        print(f"Líder eleito: Node {leader.node_id} com ID {leader.accepted_leader}")
+    else:
+        print("Nenhum líder foi aceito durante a eleição.")
+
+        # Verificando o líder eleito
+        #leader = max(nodes, key=lambda node: node.accepted_leader)
+        #print(f"Líder eleito: Node {leader.node_id} com ID {leader.accepted_leader}")
